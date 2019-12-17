@@ -1,34 +1,64 @@
-import { AppLoading } from 'expo';
+import { AppLoading, Notifications } from 'expo';
 import { Asset } from 'expo-asset';
 import * as Font from 'expo-font';
 import React, { useState } from 'react';
-import { Platform, StatusBar, StyleSheet, View } from 'react-native';
+import { Platform, StatusBar, StyleSheet, View, Alert } from 'react-native';
 import { Provider } from "react-redux";
 import { Ionicons } from '@expo/vector-icons';
 import store from './store';
+import registerForPushNotificationsAsync from './registerForPushNotificationsAsync';
 
 import AppNavigator from './navigation/AppNavigator';
 
-export default function App(props) {
-  const [isLoadingComplete, setLoadingComplete] = useState(false);
+export default class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      isLoadingComplete: false
+    };
+  }
 
-  if (!isLoadingComplete && !props.skipLoadingScreen) {
-    return (
-      <AppLoading
-        startAsync={loadResourcesAsync}
-        onError={handleLoadingError}
-        onFinish={() => handleFinishLoading(setLoadingComplete)}
-      />
-    );
-  } else {
-    return (
-      <Provider store={store}>
-        <View style={styles.container}>
-          {Platform.OS === 'ios' && <StatusBar barStyle="default" />}
-          <AppNavigator />
-        </View>
-      </Provider>
-    );
+  componentDidMount() {
+    registerForPushNotificationsAsync();
+
+    // Handle notifications that are received or selected while the app
+    // is open. If the app was closed and then opened by tapping the
+    // notification (rather than just tapping the app icon to open it),
+    // this function will fire on the next tick after the app starts
+    // with the notification data.
+    this._notificationSubscription = Notifications.addListener(this._handleNotification);
+  };
+
+  _handleNotification = (notification) => {
+    if (notification.origin === 'selected') {
+      // App is open and backgrounded, then notification is selected
+      // App was not open, and then opened by selecting the push notification
+    } else if (notification.origin === 'received') {
+      // App is open and foregrounded
+      Alert.alert('called');
+    }
+    this.setState({ notification: notification });
+  };
+
+  render() {
+    if (!this.state.isLoadingComplete && !this.props.skipLoadingScreen) {
+      return (
+        <AppLoading
+          startAsync={loadResourcesAsync}
+          onError={handleLoadingError}
+          onFinish={() => handleFinishLoading(bool => this.setState({ isLoadingComplete: bool }))}
+        />
+      );
+    } else {
+      return (
+        <Provider store={store}>
+          <View style={styles.container}>
+            {Platform.OS === 'ios' && <StatusBar barStyle="default" />}
+            <AppNavigator />
+          </View>
+        </Provider>
+      );
+    }
   }
 }
 
