@@ -1,8 +1,10 @@
+import { Notifications } from 'expo';
 import React from 'react';
-import { FlatList, ScrollView, StyleSheet, Text, View, TouchableHighlight  } from 'react-native';
+import { FlatList, ScrollView, StyleSheet, Text, View, TouchableHighlight, AppState, Alert } from 'react-native';
 import { bindActionCreators } from "redux";
 import { connect } from "react-redux";
 import { Stopwatch } from 'react-native-stopwatch-timer';
+import registerForPushNotificationsAsync from '../registerForPushNotificationsAsync';
 import { toggleStopwatch, resetStopwatch, addNotifTimes, notify } from '../modules/stopwatch';
 import { onValueChange } from '../modules/timePicker';
 import TimePicker from '../timePicker';
@@ -56,11 +58,39 @@ class MyStopwatch extends React.Component {
     this.props.stopwatch.notifTimes.custom.forEach(elem => {
       if (!elem.notified && elem.time <　time) {
         this.props.notify(elem.time);
-        alert(`${formatTimeString(elem.time)}が経過しました。`);
+        const title = 'ストップウォッチ';
+        const body = `${formatTimeString(time)}が経過しました。`;
+        if (AppState.currentState === 'active') {
+          Alert.alert(title, body);
+        } else {
+          this.notifyTime(title, body);
+        };
       };
     });
-    console.log(this.props);
-    console.log(time);
+  };
+
+  async notifyTime(title, body) {
+    let token = await Notifications.getExpoPushTokenAsync();
+console.log(token);
+    fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'accept-encoding': 'gzip, deflate',
+        'host': 'exp.host'
+      },
+      body: JSON.stringify({
+        to: token,
+        title: title,
+        body: body,
+        priority: "high",
+        sound: "default",
+        channelId: "default",
+      }),
+    }).then((response) => response.json())
+      .then((responseJson) => { })
+      .catch((error) => { console.log(error) });
   };
 
   render() {

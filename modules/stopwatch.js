@@ -50,8 +50,6 @@ const reducer = (state = initialState, action) => {
         }
       );
     case NOTIFY:
-      console.log(action.time);
-      console.log(state);
       return Object.assign({},
         state,
         {

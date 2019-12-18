@@ -30,13 +30,15 @@ export default class App extends React.Component {
   };
 
   _handleNotification = (notification) => {
+console.log(notification.data);
     if (notification.origin === 'selected') {
       // App is open and backgrounded, then notification is selected
       // App was not open, and then opened by selecting the push notification
     } else if (notification.origin === 'received') {
       // App is open and foregrounded
-      Alert.alert('called');
-    }
+      Alert.alert(notification.data.title, notification.data.body);
+    };
+
     this.setState({ notification: notification });
   };
 
